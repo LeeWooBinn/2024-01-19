@@ -1,0 +1,12 @@
+package ex03;
+
+public class Exan01 {
+
+	public static void main(String[] args) {
+		
+           int exam = 4000;
+           
+           System.out.println(exam/3600+"시간" + exam/2800"분");
+	}
+
+}

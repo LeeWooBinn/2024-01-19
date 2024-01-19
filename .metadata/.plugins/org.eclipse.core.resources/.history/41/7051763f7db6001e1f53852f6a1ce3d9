@@ -1,0 +1,332 @@
+@RequestMapping(value = "/cargoMainExport.tw")
+	public void mainExportProcessControl(@ModelAttribute("cargoCBAVO") CargoCBAVO vo, HttpServletResponse response, ModelMap model) throws Exception {
+		logger.info("workDate===> {}", vo.getWorkDate());
+		Workbook wb = new HSSFWorkbook();
+		SimpleDateFormat oDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+		List<EgovMap> list = new ArrayList<>();
+		Date oNow = new Date();
+		String sToday = oDateFormat.format(oNow);
+		FileOutputStream oFileOutputStream = null;
+		File oFile = new File("CargoMainData_" + sToday + ".xlsx");
+		String workDate = "";
+		try{						
+			workDate = vo.getWorkDate().replaceAll("-", "");
+			list = (List<EgovMap>)cargoService.selectCargoMainList(workDate);
+			
+			String cargotypeValue = "";
+			
+			// cargotype에 값 넣기
+			for(int i = 0; i < list.size(); i++) {
+				cargotypeValue = "";
+				if(list.get(i).containsKey("cbajobid") == true){
+					if(list.get(i).get("cargotype").equals("") || list.get(i).get("cargotype") == null){
+						cargotypeValue = "CBA"; 
+					}
+				}
+				if(list.get(i).containsKey("uwsjobid") == true){
+					if(cargotypeValue.equals("") || cargotypeValue == null){
+						cargotypeValue = "UWS"; 
+					}else{
+						cargotypeValue += "/UWS";
+					}
+				}
+				if(list.get(i).containsKey("ldmjobid") == true){
+					if(cargotypeValue.equals("") || cargotypeValue == null){
+						cargotypeValue = "LDM"; 
+					}else{
+						cargotypeValue += "/LDM";
+					}
+				}
+				if(list.get(i).containsKey("cpmjobid") == true){
+					if(cargotypeValue.equals("") || cargotypeValue == null){
+						cargotypeValue = "CPM"; 
+					}else{
+						cargotypeValue += "/CPM";
+					}
+				}
+				
+				list.get(i).put("cargotype", cargotypeValue);
+			}
+			//dest
+			for(int i = 0; i < list.size(); i++) {
+				String dest = "";
+				if(list.get(i).containsKey("uwsjobid") != true){
+					if(list.get(i).containsKey("cbajobid") == true){
+						if(list.get(i).get("uwsdest").equals("") || list.get(i).get("uwsdest") == null){
+							dest = String.valueOf(list.get(i).get("cbadest"));
+							list.get(i).put("uwsdest", dest);
+							continue;
+						}
+					}else if(list.get(i).containsKey("ldmjobid") == true){
+						if(dest.equals("") || dest == null){
+							dest = String.valueOf(list.get(i).get("ldmdep"));
+							list.get(i).put("uwsdest", dest);
+							continue;
+						}
+					}else if(list.get(i).containsKey("cpmjobid") == true){
+						if(dest.equals("") || dest == null){
+							dest = String.valueOf(list.get(i).get("cpmdest"));
+							list.get(i).put("uwsdest", dest);
+							continue;
+						}
+					}
+				}
+			}
+			
+			// ctnuldbulk
+			for(int i = 0; i < list.size(); i++) {
+				int countuld = 0;
+				int countcba = 0;
+				int countbulk = 0;
+				String ctnuldbulkValue = "";
+				if(list.get(i).get("countuld").equals("") || list.get(i).get("countuld") == null){
+					countuld = 0;
+				}else{
+					countuld = Integer.parseInt(String.valueOf(list.get(i).get("countuld")));
+				}
+				if(list.get(i).get("countcba").equals("") || list.get(i).get("countcba") == null){
+					countcba = 0;
+				}else{
+					countcba = Integer.parseInt(String.valueOf(list.get(i).get("countcba")));
+				}
+				if(list.get(i).get("countbulk").equals("") || list.get(i).get("countbulk") == null){
+					countbulk = 0;
+				}else{
+					countbulk = Integer.parseInt(String.valueOf(list.get(i).get("countbulk")));
+				}
+				ctnuldbulkValue = countcba + "/" + countuld + "/" + countbulk ;
+				if(ctnuldbulkValue.equals("0/0/0")){
+					ctnuldbulkValue = "";
+				}
+				list.get(i).put("ctnuldbulk", ctnuldbulkValue);
+			}
+			
+			//ttlLwt
+			for(int i = 0; i < list.size(); i++) {
+				String ttlLwt = "";
+				if(!list.get(i).get("bknwt").equals("")){
+					ttlLwt += Integer.parseInt(String.valueOf(list.get(i).get("bknwt")));
+				}
+				if(!list.get(i).get("ctngwt").equals("")){
+					ttlLwt += Integer.parseInt(String.valueOf(list.get(i).get("ctngwt")));
+				}
+				
+				list.get(i).put("ttlLwt", ttlLwt);
+			}
+			
+			//uwsgwt
+			for(int i = 0; i < list.size(); i++) {
+				String gwt = "";				
+				if(list.get(i).containsKey("cbajobid") == true){
+					if(list.get(i).get("uwsgwt").equals("") || list.get(i).get("uwsgwt") == null){
+						gwt = String.valueOf(list.get(i).get("cbagwt"));
+						list.get(i).put("uwsgwt", gwt);
+						continue;
+					}
+				}else{
+					gwt = String.valueOf(list.get(i).get("uwsgwt"));
+					list.get(i).put("uwsgwt", gwt);
+					continue;
+				}
+			}
+			
+			//wd 
+			for(int i = 0; i < list.size(); i++) {
+				int absWd = 0;
+				String wd = "";
+				if(list.get(i).get("wd").equals("") || list.get(i).get("wd") == null || list.get(i).get("wd").equals(0)){
+					wd = "";
+				}else{
+					absWd = Integer.valueOf(String.valueOf(list.get(i).get("wd")));
+					wd = String.valueOf(Math.abs(absWd));
+				}
+				list.get(i).put("wd", wd);
+			}
+			// 워크북 생성    
+			oWorkbook = new SXSSFWorkbook(-1);
+			oSheet = oWorkbook.createSheet("CargoMainData");
+			Row row = null;
+			Cell cell = null;
+			int rowNo = 0;
+
+			// 테이블 헤더용 스타일    
+			CellStyle oHeaderStyle = oWorkbook.createCellStyle(); 
+			
+			oHeaderStyle.setAlignment(CellStyle.ALIGN_CENTER);
+			oHeaderStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
+			oHeaderStyle.setBorderTop(CellStyle.BORDER_THIN);
+			oHeaderStyle.setBorderLeft(CellStyle.BORDER_THIN);
+			oHeaderStyle.setBorderRight(CellStyle.BORDER_THIN);
+			oHeaderStyle.setBorderBottom(CellStyle.BORDER_THIN);
+			oHeaderStyle.setTopBorderColor(HSSFColor.WHITE.index);
+			oHeaderStyle.setLeftBorderColor(HSSFColor.WHITE.index);
+			oHeaderStyle.setRightBorderColor(HSSFColor.WHITE.index);
+			oHeaderStyle.setBottomBorderColor(HSSFColor.WHITE.index);
+			oHeaderStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+			oHeaderStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
+			
+			Font oHeaderFont = oWorkbook.createFont();
+			oHeaderFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+			oHeaderFont.setColor(HSSFColor.WHITE.index);
+			oHeaderStyle.setFont(oHeaderFont);
+			
+			// Body 셀 정렬, 테두리 옵션
+			CellStyle oStyle = oWorkbook.createCellStyle();
+			oStyle.setAlignment(CellStyle.ALIGN_CENTER);
+			oStyle.setBorderTop(CellStyle.BORDER_THIN);
+			oStyle.setBorderLeft(CellStyle.BORDER_THIN);
+			oStyle.setBorderRight(CellStyle.BORDER_THIN);
+			oStyle.setBorderBottom(CellStyle.BORDER_THIN);
+			
+			row = oSheet.createRow(rowNo++);
+			cell = row.createCell(0);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("STD");
+			
+			cell = row.createCell(1);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("FLTNO");
+			
+			cell = row.createCell(2);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TIME");
+			
+			cell = row.createCell(3);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("DEP");
+			
+			cell = row.createCell(4);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TRANSIT");
+			
+			cell = row.createCell(5);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("DEST");
+			
+			cell = row.createCell(6);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TYPE");
+			
+			cell = row.createCell(7);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("CBM");
+
+			cell = row.createCell(8);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TOTAL NET WEIGHT");
+			
+			cell = row.createCell(9);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TOTAL MANIFEST WEIGHT");
+			
+			cell = row.createCell(10);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("WEIGHT DIFFERENCE");
+			
+			cell = row.createCell(11);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TOTAL LOADING WEIGHT");
+			
+			cell = row.createCell(12);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TOTAL GROSS WEIGHT");
+			
+			cell = row.createCell(13);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("TARE WEIGHT");
+			
+			cell = row.createCell(14);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("ULD NET WEIGHT");
+			
+			cell = row.createCell(15);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("BULK NET WEIGHT");
+			
+			cell = row.createCell(16);
+			cell.setCellStyle(oHeaderStyle);
+			cell.setCellValue("CONTAINER/ULD/BULK");
+			
+//			// 데이터 부분 생성    
+			for(int i = 0; i < list.size(); i++) 
+			{ 
+				row = oSheet.createRow(rowNo++);
+				cell = row.createCell(0);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("datop")));
+				cell = row.createCell(1);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("fltid")));
+				cell = row.createCell(2);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("stdt")));
+				cell = row.createCell(3);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("depstn")));
+				cell = row.createCell(4);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("trns")));
+				cell = row.createCell(5);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("uwsdest")));
+				cell = row.createCell(6);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("cargotype")));
+				cell = row.createCell(7);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("cbacbm")));
+				cell = row.createCell(8);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("ttlNwt")));
+				cell = row.createCell(9);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("ttlNwt")));
+				cell = row.createCell(10);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("wd")));
+				cell = row.createCell(11);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("ttlLwt")));
+				cell = row.createCell(12);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("uwsgwt")));
+				cell = row.createCell(13);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("twt")));
+				cell = row.createCell(14);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("uldnwt")));
+				cell = row.createCell(15);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("bknwt")));
+				cell = row.createCell(16);
+				cell.setCellStyle(oStyle);
+				cell.setCellValue(String.valueOf(list.get(i).get("ctnuldbulk")));
+				
+			}
+			for(int i = 0; i < 17; i++){
+				oSheet.autoSizeColumn(i);
+			}
+			
+			((SXSSFSheet) oSheet).flushRows(10000);
+			
+			oFileOutputStream = new FileOutputStream(oFile);
+			oWorkbook.write(oFileOutputStream);
+			
+			String sFileName = oFile.getName();
+			byte bArrfileByte[] = FileUtils.readFileToByteArray(oFile);
+			
+			// 파일 다운로드
+			downloadFile(response, sFileName, bArrfileByte);			
+		}catch(Exception e){
+			logger.error("MainExcelList Exception : {}", e);
+		}finally {
+			if(oFileOutputStream != null) {
+				oFileOutputStream.close();
+			}
+			if(oFile.isFile()) {
+				oFile.delete();
+			}
+		}
+		
+	}

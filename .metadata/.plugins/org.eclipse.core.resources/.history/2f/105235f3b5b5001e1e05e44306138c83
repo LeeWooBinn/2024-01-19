@@ -1,0 +1,39 @@
+package ex01;
+
+public class Hello {
+
+	public static void main(String[] args) {
+		
+
+int kor = 20;
+
+
+System.out.println("kor");
+
+System.out.println(kor);
+
+char a = '\uac22';
+char b = 88;
+char c = 'D';
+
+System.out.println(a);
+System.out.println(b);
+System.out.println(c);
+
+
+boolean flag = true;
+
+if(flag)
+	System.out.println("참일 떄 실행");
+	else
+		System.out.println("거짓 일떄 실행");
+
+String s1 = "java";
+String s2 = "Study";
+
+System.out.println(s1 + s2);
+		
+
+	}
+
+}

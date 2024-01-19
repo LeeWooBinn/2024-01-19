@@ -1,0 +1,15 @@
+package ex02;
+
+import java.awt.desktop.SystemSleepEvent;
+import java.util.Scanner;
+
+public class scanner02 {
+
+	public static void main(String[] args) {
+
+		Scanner input = new Scanner(Ststem.in);)
+          
+
+	}
+
+}

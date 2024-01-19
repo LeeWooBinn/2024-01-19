@@ -1,0 +1,25 @@
+package ex01;
+
+public class Hello {
+
+	public static void main(String[] args) {
+		
+
+int kor = 20;
+
+
+System.out.println("kor");
+
+System.out.println(kor);
+
+char a = 65;
+char b = 88;
+char c = 'D'
+
+System.out.println(a);
+System.out.println(b);
+System.out.println(c);
+
+	}
+
+}
